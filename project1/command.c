@@ -6,6 +6,7 @@
 //use write() instead
 //using low-level system calls
 
+#define _GNU_SOURCE
 #include "command.h"
 #include <unistd.h>
 #include <sys/stat.h>
@@ -15,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <libgen.h>
 
 //ls | system call --> opendir(), readdir(), closedir()
 void listDir() {
@@ -24,7 +26,7 @@ void listDir() {
     //error: null is returned
     if (dir == NULL) {
         char* exist_msg = "Directory does not exist\n";
-        write(2, exist_msg, strlen(exist_msg));
+        write(1, exist_msg, strlen(exist_msg));
         return;
         }
 
@@ -71,7 +73,7 @@ void makeDir(char *dirName) {
         switch (errno) {
             //how to handle if directory exists already
             case EEXIST:
-                char* exist_msg = "Directory already exists\n";
+                char* exist_msg = "Directory already exists!\n";
                 write(2, exist_msg, strlen(exist_msg));
                 break;
             default: 
@@ -102,21 +104,44 @@ void copyFile(char *sourcePath, char *destinationPath) {
     int src_fd, dst_fd;
     ssize_t bytes_read;
     char buffer[1024];
+    struct stat stat_buf;
+    //buffer for final path
+    char final_dst_path[1024];
+
+    //check if dst is directory
+    int stat_result = stat(destinationPath, &stat_buf);
+    if (stat_result == 0 && S_ISDIR(stat_buf.st_mode)){
+        //if dst is directory
+        //need non-const copy of sourcePath for basename()
+        char* src_path_copy = strdup(sourcePath);
+        char* src_basename = basename(src_path_copy);
+
+        //build new path
+        strcpy(final_dst_path, destinationPath);
+        strcat(final_dst_path, "/");
+        strcat(final_dst_path, src_basename);
+
+        //free strdup
+        free(src_path_copy);
+    } else {
+        //dst is a file
+        strcpy(final_dst_path, destinationPath);
+    }
 
     //open the src file and read from it
     src_fd = open(sourcePath, O_RDONLY);
     //error when -1 is returned
     if (src_fd < 0) {
-        char* error_msg = "Error: cannot open source file\n";
+        char* error_msg = "Error: Cannot open source file\n";
         write(2, error_msg, strlen(error_msg));
         return;
     }
 
     //open the destination file
-    dst_fd = open(destinationPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    dst_fd = open(final_dst_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     //error when -1
     if (dst_fd < 0) {
-        char* error_msg = "Error: cannot open destination file\n";
+        char* error_msg = "Error: Cannot open destination file\n";
         write(2, error_msg, strlen(error_msg));
         //close source file before returning to prevent mem leaks
         close(src_fd);
@@ -152,20 +177,9 @@ void moveFile(char *sourcePath, char *destinationPath) {
 
 //rm | system call --> unlink()
 void deleteFile(char *filename) {
-    int status = unlink(filename);
-
-    //error on -1
-    if (status == -1) {
-        switch (errno) {
-            case ENOENT:
-                char* exist_msg = "File does not exist\n";
-                write(2, exist_msg, strlen(exist_msg));
-                break;
-            default:
-                char* error_msg = "Error: Could not remove file\n";
-                write(2, error_msg, strlen(error_msg));
-                break;
-        }
+    if (unlink(filename) == -1) {
+        char* error_msg = "File not found\n";
+        write(2, error_msg, strlen(error_msg));
     }
     //successful: no output
 }

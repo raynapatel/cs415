@@ -12,6 +12,7 @@
     //space_commands.command_list takes in command name as first token
     //add one arg to all command checks
 int process_command(command_line* space_commands) {
+    char err_buf[1024];
     char* command = space_commands->command_list[0];
     int num_tokens = space_commands->num_token;
 
@@ -23,7 +24,8 @@ int process_command(command_line* space_commands) {
         if (num_tokens == 1) { //ls takes 0 args
             listDir();
         } else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
         }
     } 
     else if (strcmp(command, "pwd") == 0) {
@@ -31,14 +33,24 @@ int process_command(command_line* space_commands) {
             showCurrentDir();
         }
         else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
         }
     }
     else if (strcmp(command, "mkdir") == 0) {
         if (num_tokens == 2) {
             makeDir(space_commands->command_list[1]);
         } else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
+        }
+    }
+    else if (strcmp(command, "cd") == 0) {
+        if (num_tokens != 2) { // 'cd' takes 1 argument
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
+        } else {
+            changeDir(space_commands->command_list[1]);
         }
     }
     else if (strcmp(command, "cp") == 0) {
@@ -46,7 +58,8 @@ int process_command(command_line* space_commands) {
             copyFile(space_commands->command_list[1], 
             space_commands->command_list[2]);
         } else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
         }
     }
     else if (strcmp(command, "mv") == 0) {
@@ -54,25 +67,29 @@ int process_command(command_line* space_commands) {
             moveFile(space_commands->command_list[1], 
             space_commands->command_list[2]);   
         } else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
         }
     }
     else if (strcmp(command, "rm") == 0) {
         if (num_tokens == 2) {
             deleteFile(space_commands->command_list[1]);
         } else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
         }
     }
     else if (strcmp(command, "cat") == 0) {
         if (num_tokens == 2) {
             displayFile(space_commands->command_list[1]);
         } else {
-            fprintf(stderr, "Error! Unsupported parameters for command: %s\n", command);
+            snprintf(err_buf, sizeof(err_buf), "Error! Unsupported parameters for command: %s\n", command);
+            write(STDERR_FILENO, err_buf, strlen(err_buf));
         }
     }
     else {
-        fprintf(stderr, "Error! Unrecognized command: %s\n", command);
+        snprintf(err_buf, sizeof(err_buf), "Error! Unrecognized command: %s\n", command);
+        write(STDERR_FILENO, err_buf, strlen(err_buf));
     }
     return 0;
 }
@@ -119,7 +136,8 @@ int main(int argc, char *argv[]) {
         }
 
         //redirect STDOUT (file descriptor 1) to point to output.txt
-        //anything that should go to STDOUT to be redirected to output.txt
+        //anything that should go to STDOUT or STDERR to be redirected to output.txt
+        dup2(foutput, STDERR_FILENO);
         dup2(foutput, STDOUT_FILENO);
         close(foutput);
 
@@ -127,8 +145,10 @@ int main(int argc, char *argv[]) {
     } else {
         //error, invalid # of arguments
         //exit
-        fprintf(stderr, "%s [-f <filename>]\n", argv[0]);
-         return 1;
+        char err_buf[1024];
+        snprintf(err_buf, sizeof(err_buf), "Usage: %s [-f <filename>]\n", argv[0]);
+        write(STDERR_FILENO, err_buf, strlen(err_buf));
+        return 1;
     }
 
     // ------------------------------ Unified Processing Loop ------------------------------
@@ -141,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     while(1) {
         if (interactive_mode) {
-            printf(">>>");
+            write(STDOUT_FILENO, ">>>", 4);
         }
             
         //read input from stdin (keyboard)
@@ -202,7 +222,11 @@ int main(int argc, char *argv[]) {
         fclose(input_stream);
     }
 
-    printf("Bye Bye!\n");
+    if(!interactive_mode) {
+        write(STDOUT_FILENO, "End of file\n", 12);
+    }
+
+    write(STDOUT_FILENO, "Bye Bye!\n", 9);
 
     return 0;
 }

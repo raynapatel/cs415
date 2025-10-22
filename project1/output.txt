@@ -1,0 +1,21 @@
+/home/users/raynap/cs415/project1
+Directory already exists!
+Error! Unrecognized command: sfjlksagjlks
+. .. 
+/home/users/raynap/cs415/project1/test
+/home/users/raynap/cs415/project1/test
+. .. input.txt 
+pwd ; mkdir test ; cd test
+sfjlksagjlks;ls; pwd;
+cd .. ; cd test ; pwd
+cp ../input.txt . ; ls ; cat input.txt
+mv input.txt del.txt ; pwd ; ls
+rm del.txt ; ls
+cd .. ; pwd
+ls/home/users/raynap/cs415/project1/test
+. .. del.txt 
+. .. 
+/home/users/raynap/cs415/project1
+. .. psuedo-shell output.txt example-output.txt main.o test_script.sh command.o Makefile string_parser.c command.h main.c string_parser.h command.c test Project 1 - Description.pdf Report_Collection_Template.docx README input.txt string_parser.o 
+End of file
+Bye Bye!

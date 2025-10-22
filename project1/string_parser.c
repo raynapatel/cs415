@@ -34,21 +34,6 @@ int count_token (char* buf, const char* delim)
 		token = strtok_r(NULL, delim, &saveptr);
 	}
 	return count;
-
-	/* solution 2 */
-	// char *saveptr;
-	// int count = 0;
-	// char *buf_copy = strdup(buf);
-	// // using another ptr to keep original buf_copy (strtok_r will change buf_copy)
-	// char *org_prt = buf_copy;
-	// buf_copy = strtok_r(buf_copy, delim, &saveptr);
-
-	// while(buf_copy != NULL){
-	// 	buf_copy = strtok_r(NULL, delim, &saveptr);
-	// 	count++;
-	// }
-	// free(org_prt);
-	// return count;
 }
 
 command_line str_filler (char* buf, const char* delim)
