@@ -136,9 +136,9 @@ int main(int argc, char *argv[]) {
         }
 
         //redirect STDOUT (file descriptor 1) to point to output.txt
-        //anything that should go to STDOUT or STDERR to be redirected to output.txt
-        dup2(foutput, STDERR_FILENO);
         dup2(foutput, STDOUT_FILENO);
+        //add in redirection for STDERR
+        dup2(foutput, STDERR_FILENO);
         close(foutput);
 
         // ------------------------------ Error Handling ------------------------------
